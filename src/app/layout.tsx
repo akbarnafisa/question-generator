@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import Navbar from "./_components/common/Navbar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans ${inter.variable}`}>
         <TRPCReactProvider>
-          <NextTopLoader color="#e11d48" />
+          <NextTopLoader color="#1c1917" />
+          <Navbar />
           {children}
         </TRPCReactProvider>
       </body>
