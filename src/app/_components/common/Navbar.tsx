@@ -9,7 +9,7 @@ export default async function Navbar() {
   return (
     <nav className="fixed top-0 z-20 w-full rounded-b border-b bg-white py-2">
       <div className="container mx-auto flex flex-wrap items-center justify-between">
-        <Link className="flex items-center" href={"/api/auth/signin"}>
+        <Link className="flex items-center" href="/">
           <svg
             width="24"
             height="23"
