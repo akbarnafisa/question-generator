@@ -38,7 +38,12 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  // The callbacks object defines functions that run during the authentication process
   callbacks: {
+    
+    // The session callback is used to manage user session data
+    // It takes an object with the current session and user and returns the updated session
+    // In this case, it's adding the user's id to the session object
     session: ({ session, user }) => ({
       ...session,
       user: {
@@ -47,7 +52,12 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   },
+  // The adapter is set to DrizzleAdapter, which is a database adapter for NextAuth.js
+  // It's being passed the database connection object (db) and a function to create the database table (createTable)
   adapter: DrizzleAdapter(db, createTable) as Adapter,
+  // The providers array is used to specify the authentication providers for NextAuth.js
+  // In this case, it's using Google as the authentication provider
+  // The GoogleProvider is being passed the Google client ID and client secret from the environment variables
   providers: [
     GoogleProvider({
       clientId: env.GOOGLE_CLIENT_ID,

@@ -6,6 +6,10 @@ import { getServerAuthSession } from "~/server/auth";
 import { api } from "~/trpc/server";
 
 export default async function Home() {
+  /**
+   * Caching is often prevented on the server side for pages that contain sensitive, user-specific, or real-time data.
+   * This is to ensure that the most up-to-date and accurate data is always displayed to the user.
+   */
   noStore();
   const hello = await api.post.hello.query({ text: "from tRPC" });
   const session = await getServerAuthSession();
