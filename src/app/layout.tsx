@@ -5,6 +5,7 @@ import NextTopLoader from "nextjs-toploader";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import Navbar from "./_components/common/Navbar";
+import { Toaster } from "~/components/ui/toaster";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({
           <NextTopLoader color="#1c1917" />
           <Navbar />
           {children}
+          <Toaster />
         </TRPCReactProvider>
       </body>
     </html>
