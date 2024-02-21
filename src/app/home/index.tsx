@@ -6,6 +6,8 @@ import { Button } from "~/components/ui/button";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCompletion } from "ai/react";
+import { useToast } from "~/components/ui/use-toast";
 
 interface Props {
   session: Session | null;
@@ -18,8 +20,9 @@ const TEMPLATE_QUESTIONS = [
       "4 Mathematics questions, 2nd grade high school, with algebra topics",
   },
   {
-    title: "Science questions",
-    content: "5 Science questions, 7th grade, focusing on human anatomy",
+    title: "Multiple Choice Questions",
+    content:
+      "5 multiple choice questions on the topic of human anatomy, suitable for 7th-grade Science.",
   },
   {
     title: "Geography questions",
@@ -27,17 +30,46 @@ const TEMPLATE_QUESTIONS = [
   },
 ];
 
+type QUESTIONS = {
+  grade: string;
+  subject: string;
+  topic: string;
+  total_questions: number;
+  question_type: string;
+  questions: string[];
+};
+
 export default function Home({ session }: Props) {
   const [content, setContent] = useState<string>("");
+  const [questions, setQuestions] = useState<QUESTIONS | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
+  const { complete, isLoading } = useCompletion({
+    api: `/api/questions?sessionId=${session?.user.sessionId ?? ""}`,
+    onFinish(_, completion) {
+      const result = JSON.parse(completion) as QUESTIONS;
+      setQuestions(result);
+    },
+    onError(error) {
+      toast({
+        variant: "destructive",
+        title: "Unable to generate questions",
+        description: error.message,
+      });
+    },
+  });
 
-  const handleSubmission = (prompt: string) => {
+  const handleSubmission = async (prompt: string) => {
     if (!session) {
       router.push("/api/auth/signin");
       return;
     }
-    setContent(prompt);
+
+    if (prompt) {
+      setContent(prompt);
+      await complete(prompt);
+    }
   };
 
   const handleTemplateSelection = (index: number) => {
@@ -55,14 +87,19 @@ export default function Home({ session }: Props) {
           crafted by our AI.
         </p>
 
-        <InputQuestion content={content} onSubmit={handleSubmission} />
+        <InputQuestion
+          isLoading={isLoading}
+          content={content}
+          onSubmit={handleSubmission}
+          onChange={(e) => setContent(e)}
+        />
 
         <div className="mt-8">
           {TEMPLATE_QUESTIONS.map((question, index) => (
             <Button
               key={index}
               variant="outline"
-              className="mr-4"
+              className="mb-4 mr-2"
               onClick={() => handleTemplateSelection(index)}
             >
               {question.title} <ArrowUpRight className="ml-1" size={18} />
