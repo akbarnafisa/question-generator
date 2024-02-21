@@ -1,20 +1,22 @@
 "use client";
 
-import { Send } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, Send } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
 
 type InputQuestionProps = {
   content: string;
+  isLoading: boolean;
   onSubmit: (content: string) => void;
+  onChange: (content: string) => void;
 };
 
 export default function InputQuestion({
   content,
+  isLoading,
   onSubmit,
+  onChange,
 }: InputQuestionProps) {
-  const [getContent, setContent] = useState("");
-
   const $input = useRef<HTMLTextAreaElement>(null);
   const $bg = useRef<HTMLDivElement>(null);
 
@@ -27,26 +29,10 @@ export default function InputQuestion({
     bg.style.height = `${$input.current.scrollHeight}px`;
   }, []);
 
-  const addEventListener = useCallback(() => {
-    if ($input.current && $bg.current) {
-      $input.current.style.height = `${$input.current.scrollHeight}px`;
-      $bg.current.style.height = `${$input.current.scrollHeight}px`;
-
-      $input.current.addEventListener("input", handleAutoGrow);
-    }
-  }, [handleAutoGrow]);
-
   useEffect(() => {
-    setContent(content ?? "");
-  }, [content]);
+    handleAutoGrow();
+  }, [content, handleAutoGrow]);
 
-  useEffect(() => {
-    addEventListener();
-
-    return () => {
-      addEventListener();
-    };
-  }, [addEventListener]);
   return (
     <div className=" z-10 m-auto flex min-h-12 w-full max-w-[90%] flex-col divide-zinc-600 overflow-hidden rounded-[24px] bg-gray-900 shadow-lg shadow-black/40 sm:max-w-lg">
       <div className="relative z-10 flex min-w-0 flex-1 items-center bg-gray-900 px-3 md:pl-4">
@@ -54,7 +40,7 @@ export default function InputQuestion({
           className="h-full w-full"
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmit(getContent);
+            onSubmit(content);
           }}
         >
           <div
@@ -71,17 +57,22 @@ export default function InputQuestion({
                 rows={1}
                 placeholder='A "report an issue" modal'
                 style={{ colorScheme: "dark", height: "47px !important" }}
-                value={getContent}
-                onChange={(e) => setContent(e.target.value)}
+                value={content}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={isLoading}
               ></textarea>
             </div>
             <div className="flex items-center">
               <Button
                 size="icon"
                 variant="default"
-                disabled={getContent.trim() === ""}
+                disabled={content.trim() === "" || isLoading}
               >
-                <Send color="white" size={16} />
+                {isLoading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Send color="white" size={16} />
+                )}
               </Button>
             </div>
           </div>
