@@ -49,9 +49,14 @@ export default async function Navbar() {
         </Link>
 
         <div className="w-auto" id="navbar-default">
-          <Link href="/api/auth/signin">
-            {session ? <Profile /> : <Button size="sm">Login</Button>}
-          </Link>
+          {session ? (
+            <Profile />
+          ) : (
+            <Link href="/api/auth/signin">
+              {" "}
+              <Button size="sm">Login</Button>{" "}
+            </Link>
+          )}
         </div>
       </div>
     </nav>
