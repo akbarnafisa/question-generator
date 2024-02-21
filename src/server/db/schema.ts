@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   pgTableCreator,
@@ -17,36 +18,8 @@ import { type AdapterAccount } from "next-auth/adapters";
  *
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
-export const createTable = pgTableCreator((name) => `question-generator_${name}`);
-
-// Using the createTable function to define a 'post' table
-export const posts = createTable(
-  // The name of the table
-  "post",
-  // The columns of the table
-  {
-    // 'id' column, which is a primary key and auto-increments
-    id: serial("id").primaryKey(),
-    // 'name' column, which is a variable character string with a maximum length of 256
-    name: varchar("name", { length: 256 }),
-    // 'createdById' column, which is a foreign key referencing the 'id' column of the 'users' table
-    createdById: varchar("createdById", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    // 'createdAt' column, which is a timestamp that defaults to the current timestamp
-    createdAt: timestamp("created_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    // 'updatedAt' column, which is a timestamp
-    updatedAt: timestamp("updatedAt"),
-  },
-  // The indexes of the table
-  (post) => ({
-    // An index on the 'createdById' column
-    createdByIdIdx: index("createdById_idx").on(post.createdById),
-    // An index on the 'name' column
-    nameIndex: index("name_idx").on(post.name),
-  })
+export const createTable = pgTableCreator(
+  (name) => `question-generator_${name}`,
 );
 
 // Using the createTable function to define a 'user' table
@@ -70,13 +43,14 @@ export const users = createTable(
     }).default(sql`CURRENT_TIMESTAMP`),
     // 'image' column, which is a variable character string with a maximum length of 255
     image: varchar("image", { length: 255 }),
-  }
+  },
 );
 
 // Defining the relations for the 'user' table
 export const usersRelations = relations(users, ({ many }) => ({
   // Each user can have many accounts
   accounts: many(accounts),
+  subjectQuestions: many(subjectQuestions),
 }));
 
 // Using the createTable function to define an 'account' table
@@ -124,7 +98,7 @@ export const accounts = createTable(
     }),
     // An index on the 'userId' column
     userIdIdx: index("account_userId_idx").on(account.userId),
-  })
+  }),
 );
 
 // Defining the relations for the 'account' table
@@ -157,7 +131,7 @@ export const sessions = createTable(
   (session) => ({
     // An index on the 'userId' column
     userIdIdx: index("session_userId_idx").on(session.userId),
-  })
+  }),
 );
 
 // Defining the relations for the 'session' table
@@ -186,5 +160,62 @@ export const verificationTokens = createTable(
   (vt) => ({
     // A compound primary key on the 'identifier' and 'token' columns
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  })
+  }),
 );
+
+export const subjectQuestions = createTable("subject_questions", {
+  id: serial("id").primaryKey(),
+  grade: varchar("grade", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  topic: varchar("topic", { length: 255 }).notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  questionType: varchar("question_type", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at"),
+  authorId: varchar("author_id", { length: 255 })
+    .notNull()
+    .references(() => users.id),
+});
+
+export const subjectQuestionsRelations = relations(
+  subjectQuestions,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [subjectQuestions.authorId],
+      references: [users.id],
+    }),
+    questions: many(questions),
+  }),
+);
+
+export const questions = createTable("questions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  subjectQuestionsId: integer("subject_questions_id").references(
+    () => subjectQuestions.id,
+  ),
+});
+
+export const questionsRelations = relations(questions, ({ one, many }) => ({
+  subjectQuestion: one(subjectQuestions, {
+    fields: [questions.subjectQuestionsId],
+    references: [subjectQuestions.id],
+  }),
+  questions: many(answers),
+}));
+
+export const answers = createTable("answers", {
+  id: serial("id").primaryKey(),
+  questionId: integer("questions_id").references(() => questions.id),
+  answer: varchar("answer", { length: 255 }).notNull(),
+  isCorrect: boolean("isCorrect").notNull(),
+});
+
+export const answersRelations = relations(answers, ({ one }) => ({
+  subjectQuestion: one(questions, {
+    fields: [answers.questionId],
+    references: [questions.id],
+  }),
+}));
