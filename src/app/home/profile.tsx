@@ -24,16 +24,12 @@ export function Profile() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <Link href={"/history"}>Questions List</Link>
+            <Link href={"/history"} className="w-full">Questions List</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
-          <Link
-            href={"/api/auth/signout"}
-          >
-            Log out
-          </Link>{" "}
+          <Link href={"/api/auth/signout"} className="w-full">Log out</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
