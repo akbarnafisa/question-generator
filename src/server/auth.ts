@@ -1,4 +1,5 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { eq } from "drizzle-orm";
 import {
   getServerSession,
   type DefaultSession,
@@ -9,7 +10,7 @@ import GoogleProvider from "next-auth/providers/google";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
-import { createTable } from "~/server/db/schema";
+import { createTable, sessions } from "~/server/db/schema";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -20,7 +21,9 @@ import { createTable } from "~/server/db/schema";
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
-      id: string;
+      sessionId: string;
+      name: string;
+      image: string;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
@@ -40,17 +43,23 @@ declare module "next-auth" {
 export const authOptions: NextAuthOptions = {
   // The callbacks object defines functions that run during the authentication process
   callbacks: {
-    
     // The session callback is used to manage user session data
     // It takes an object with the current session and user and returns the updated session
     // In this case, it's adding the user's id to the session object
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    session: async ({ session, user }) => {
+      const dbSession = await db.query.sessions.findFirst({
+        where: eq(sessions.userId, user.id),
+      });
+
+      return {
+        ...session,
+        user: {
+          sessionId: dbSession?.sessionToken,
+          name: user.name,
+          image: user.image,
+        },
+      };
+    },
   },
   // The adapter is set to DrizzleAdapter, which is a database adapter for NextAuth.js
   // It's being passed the database connection object (db) and a function to create the database table (createTable)
