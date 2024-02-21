@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1708489222996,
+      "tag": "0000_greedy_typhoid_mary",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1708489972593,
+      "tag": "0001_skinny_leper_queen",
+      "breakpoints": true
+    }
+  ]
+}
