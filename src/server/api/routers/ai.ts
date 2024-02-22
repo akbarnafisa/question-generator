@@ -31,7 +31,7 @@ type ExtractQuestionsError = {
 };
 
 export const aiRouter = createTRPCRouter({
-  getSubjectQuestions: protectedProcedure
+  getSubjectQuestionsWithQuestions: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const sessionId = ctx.session.user.sessionId;

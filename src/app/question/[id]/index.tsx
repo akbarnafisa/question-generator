@@ -24,7 +24,7 @@ export default function QuestionPage({ questionId }: Props) {
     error,
     isError,
     isLoading,
-  } = api.ai.getSubjectQuestions.useQuery(
+  } = api.ai.getSubjectQuestionsWithQuestions.useQuery(
     {
       id: Number(questionId) || 0,
     },
