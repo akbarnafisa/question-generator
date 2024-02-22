@@ -2,10 +2,15 @@ import { z } from "zod";
 import OpenAI from "openai";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { questions, sessions, subjectQuestions } from "~/server/db/schema";
+import {
+  answers,
+  questions,
+  sessions,
+  subjectQuestions,
+} from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import { unescape } from 'html-escaper';
+import { unescape } from "html-escaper";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -25,15 +30,11 @@ type ExtractQuestionsError = {
   error: string;
 };
 
-
-
 export const aiRouter = createTRPCRouter({
-  generateSubjectQuestions: protectedProcedure
-    .input(z.object({ prompt: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const { prompt } = input;
-
-      const sessionId = ctx.session.user.sessionId; // how to get session id
+  getSubjectQuestions: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const sessionId = ctx.session.user.sessionId;
 
       const user = await ctx.db.query.sessions.findFirst({
         where: eq(sessions.sessionToken, sessionId),
@@ -47,28 +48,62 @@ export const aiRouter = createTRPCRouter({
         });
       }
 
-      const extractText = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        stream: false,
-        temperature: 0,
-        max_tokens: 300,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        prompt: createExtractQuestionsPrompt(prompt),
+      const result = await ctx.db.query.subjectQuestions.findFirst({
+        where: eq(subjectQuestions.id, input.id),
+        with: {
+          questions: {
+            with: {
+              answers: true,
+            },
+          },
+        },
       });
 
-      const extractResult = extractQuestionsFromGPT(
-        extractText.choices[0]?.text ?? "{}",
-      );
-
-      if ("error" in extractResult) {
+      if (!result) {
         throw new TRPCError({
-          code: "UNPROCESSABLE_CONTENT",
-          message: "Ensure questions are properly formatted and try again.",
+          code: "NOT_FOUND",
+          message: "Questions not found",
+        });
+      }
+
+      if (result.authorId !== user.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You can not see this question",
+        });
+      }
+
+      return {
+        prompt: result.prompt,
+        grade: result.grade,
+        subject: result.subject,
+        topic: result.topic,
+        total_questions: result.totalQuestions,
+        question_type: result.questionType,
+        questions: result.questions,
+      };
+    }),
+  createSubjectQuestions: protectedProcedure
+    .input(z.object({ prompt: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { prompt } = input;
+
+      const sessionId = ctx.session.user.sessionId;
+
+      const user = await ctx.db.query.sessions.findFirst({
+        where: eq(sessions.sessionToken, sessionId),
+        with: { user: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User not found",
         });
       }
 
       const { grade, subject, topic, total_questions, question_type } =
-        extractResult;
+        await extractQuestions(prompt);
 
       if (total_questions > MAX_QUESTIONS) {
         throw new TRPCError({
@@ -77,36 +112,13 @@ export const aiRouter = createTRPCRouter({
         });
       }
 
-      // Respond with the stream
-      const generateQuiz = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        stream: false,
-        temperature: 0.5,
-        max_tokens: 1000,
-        prompt: createQuestionsPrompt({
-          grade,
-          subject,
-          topic,
-          total_questions,
-          question_type,
-        }),
+      const quizResultArray = await getQuestions({
+        grade,
+        subject,
+        topic,
+        total_questions,
+        question_type,
       });
-
-      const quizResult = generateQuiz.choices[0]?.text ?? "";
-      let quizResultArray: string[] = [];
-
-      try {
-        quizResultArray = quizResult
-          .split("_END_")
-          .filter(Boolean)
-          .map((v) => v.replaceAll("\n", "").replaceAll("Q:", "").trim());
-      } catch (error) {
-        throw new TRPCError({
-          code: "UNPROCESSABLE_CONTENT",
-          message:
-            "Unable to create questions, please ensure questions are properly formatted and try again.",
-        });
-      }
 
       const [subjectQuestionsDb] = await ctx.db
         .insert(subjectQuestions)
@@ -117,6 +129,7 @@ export const aiRouter = createTRPCRouter({
           totalQuestions: total_questions,
           questionType: question_type,
           authorId: user.userId,
+          prompt,
         })
         .returning();
 
@@ -146,7 +159,157 @@ export const aiRouter = createTRPCRouter({
         id: result?.id,
       };
     }),
+
+  createAnswers: protectedProcedure
+    .input(
+      z.object({
+        prompt: z.string(),
+        questionId: z.number(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { prompt, questionId } = input;
+
+      const sessionId = ctx.session.user.sessionId;
+
+      const user = await ctx.db.query.sessions.findFirst({
+        where: eq(sessions.sessionToken, sessionId),
+        with: { user: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User not found",
+        });
+      }
+
+      const getQuestions = await ctx.db.query.subjectQuestions.findFirst({
+        where: eq(subjectQuestions.id, questionId),
+      });
+
+      if (!getQuestions) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Question with ID ${questionId} is not found`,
+        });
+      }
+
+      if (getQuestions.authorId !== user.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You can not see this question",
+        });
+      }
+
+      const generateAnswer = await openai.completions.create({
+        model: "gpt-3.5-turbo-instruct",
+        stream: false,
+        temperature: 0.2,
+        max_tokens: 100,
+        prompt: getGenerateAnswerPrompt(prompt, getQuestions.questionType),
+      });
+
+      const answer = generateAnswer.choices[0]?.text ?? "";
+
+      const answerDb = ctx.db
+        .insert(answers)
+        .values({
+          answer,
+          isCorrect: true,
+          questionId: getQuestions.id,
+        })
+        .returning();
+
+      return answerDb;
+    }),
 });
+
+const getGenerateAnswerPrompt = (prompt: string, questionType: string) => {
+  if (questionType === "short_answer") {
+    return `
+      Give answer for a given question 
+      The result must follow these following rules:
+      - Only give the answer
+      - Make sure the answer is short and effective
+
+      question: "${prompt}"
+    `;
+  }
+  return `
+    Give 4 options for multiple choice and give 1 correct answer.
+    The result must follow these following rules:
+    - format the questions in plain text
+    - begin each options with "O:" to denote the options
+    - end each question with "_END_"
+
+    question: "${prompt}"
+  `;
+};
+
+const getQuestions = async ({
+  grade,
+  subject,
+  topic,
+  total_questions,
+  question_type,
+}: ExtractQuestions) => {
+  const generateQuiz = await openai.completions.create({
+    model: "gpt-3.5-turbo-instruct",
+    stream: false,
+    temperature: 0.5,
+    max_tokens: 1000,
+    prompt: createQuestionsPrompt({
+      grade,
+      subject,
+      topic,
+      total_questions,
+      question_type,
+    }),
+  });
+
+  const quizResult = generateQuiz.choices[0]?.text ?? "";
+  let quizResultArray: string[] = [];
+
+  try {
+    quizResultArray = quizResult
+      .split("_END_")
+      .filter(Boolean)
+      .map((v) => v.replaceAll("\n", "").replaceAll("Q:", "").trim());
+  } catch (error) {
+    throw new TRPCError({
+      code: "UNPROCESSABLE_CONTENT",
+      message:
+        "Unable to create questions, please ensure questions are properly formatted and try again.",
+    });
+  }
+
+  return quizResultArray;
+};
+
+const extractQuestions = async (prompt: string) => {
+  const extractText = await openai.completions.create({
+    model: "gpt-3.5-turbo-instruct",
+    stream: false,
+    temperature: 0,
+    max_tokens: 300,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    prompt: createExtractQuestionsPrompt(prompt),
+  });
+
+  const extractResult = extractQuestionsFromGPT(
+    extractText.choices[0]?.text ?? "{}",
+  );
+
+  if ("error" in extractResult) {
+    throw new TRPCError({
+      code: "UNPROCESSABLE_CONTENT",
+      message: "Ensure questions are properly formatted and try again.",
+    });
+  }
+
+  return extractResult;
+};
 
 const extractQuestionsFromGPT = (
   text: string,
