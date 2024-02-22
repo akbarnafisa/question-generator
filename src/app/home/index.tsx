@@ -6,8 +6,10 @@ import { Button } from "~/components/ui/button";
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCompletion } from "ai/react";
 import { useToast } from "~/components/ui/use-toast";
+
+import { api } from "~/trpc/react";
+import { type TRPC_ERROR_CODE_KEY } from "@trpc/server/rpc";
 
 interface Props {
   session: Session | null;
@@ -30,33 +32,25 @@ const TEMPLATE_QUESTIONS = [
   },
 ];
 
-type QUESTIONS = {
-  grade: string;
-  subject: string;
-  topic: string;
-  total_questions: number;
-  question_type: string;
-  questions: string[];
-};
-
 export default function Home({ session }: Props) {
   const [content, setContent] = useState<string>("");
-  const [questions, setQuestions] = useState<QUESTIONS | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
-  const { complete, isLoading } = useCompletion({
-    api: `/api/questions?sessionId=${session?.user.sessionId ?? ""}`,
-    onFinish(_, completion) {
-      const result = JSON.parse(completion) as QUESTIONS;
-      setQuestions(result);
+  const { isLoading, mutate } = api.ai.generateSubjectQuestions.useMutation({
+    onSuccess: (data) => {
+      router.push(`/question/${data.id}`)
     },
-    onError(error) {
-      toast({
-        variant: "destructive",
-        title: "Unable to generate questions",
-        description: error.message,
-      });
+    onError: (error) => {
+      if ((error.message as TRPC_ERROR_CODE_KEY) === "UNAUTHORIZED") {
+        router.push("/api/auth/signin");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Unable to generate questions",
+          description: error.message,
+        });
+      }
     },
   });
 
@@ -67,8 +61,7 @@ export default function Home({ session }: Props) {
     }
 
     if (prompt) {
-      setContent(prompt);
-      await complete(prompt);
+      mutate({ prompt });
     }
   };
 
