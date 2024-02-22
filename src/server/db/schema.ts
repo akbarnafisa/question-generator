@@ -165,6 +165,7 @@ export const verificationTokens = createTable(
 
 export const subjectQuestions = createTable("subject_questions", {
   id: serial("id").primaryKey(),
+  prompt: varchar("prompt", { length: 500 }).notNull(),
   grade: varchar("grade", { length: 255 }).notNull(),
   subject: varchar("subject", { length: 255 }).notNull(),
   topic: varchar("topic", { length: 255 }).notNull(),
@@ -203,7 +204,7 @@ export const questionsRelations = relations(questions, ({ one, many }) => ({
     fields: [questions.subjectQuestionsId],
     references: [subjectQuestions.id],
   }),
-  questions: many(answers),
+  answers: many(answers),
 }));
 
 export const answers = createTable("answers", {
