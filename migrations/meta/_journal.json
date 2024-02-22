@@ -15,6 +15,13 @@
       "when": 1708489972593,
       "tag": "0001_skinny_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1708593668250,
+      "tag": "0002_moaning_star_brand",
+      "breakpoints": true
     }
   ]
 }
