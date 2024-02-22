@@ -31,6 +31,45 @@ type ExtractQuestionsError = {
 };
 
 export const aiRouter = createTRPCRouter({
+  getAllSubjectQuestions: protectedProcedure.query(async ({ ctx }) => {
+    const sessionId = ctx.session.user.sessionId;
+
+    const user = await ctx.db.query.sessions.findFirst({
+      where: eq(sessions.sessionToken, sessionId),
+      with: { user: true },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "User not found",
+      });
+    }
+
+    const result = await ctx.db.query.subjectQuestions.findMany({
+      where: eq(subjectQuestions.authorId, user.userId),
+    });
+
+    if (!result) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Questions not found",
+      });
+    }
+
+    return result.map((item) => {
+      return {
+        id: item.id,
+        prompt: item.prompt,
+        grade: item.grade,
+        subject: item.subject,
+        topic: item.topic,
+        total_questions: item.totalQuestions,
+        question_type: item.questionType,
+      };
+    });
+  }),
+
   getSubjectQuestionsWithQuestions: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
