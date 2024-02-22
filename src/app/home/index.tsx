@@ -37,9 +37,9 @@ export default function Home({ session }: Props) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const { isLoading, mutate } = api.ai.generateSubjectQuestions.useMutation({
+  const { isLoading, mutate } = api.ai.createSubjectQuestions.useMutation({
     onSuccess: (data) => {
-      router.push(`/question/${data.id}`)
+      router.push(`/question/${data.id}`);
     },
     onError: (error) => {
       if ((error.message as TRPC_ERROR_CODE_KEY) === "UNAUTHORIZED") {
