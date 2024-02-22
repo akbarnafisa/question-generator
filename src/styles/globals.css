@@ -78,3 +78,11 @@
 .question-page-height {
   height: calc(100vh - 52px);
 }
+
+
+@media (max-width: 768px) {
+  .container {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
