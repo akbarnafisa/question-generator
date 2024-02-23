@@ -132,6 +132,7 @@ export default function QuestionPage({ questionId }: Props) {
                     number={index + 1}
                     questionItem={questionItem}
                     questionType={subjectQuestionsData.question_type}
+                    subjectQuestionId={subjectQuestionsData?.id ?? 0}
                   />
                 ))}
               </>
@@ -175,11 +176,12 @@ const MultipleChoiceAnswer = ({
 };
 
 const ShortAnswerQuestion = ({ answer }: { answer: string }) => {
-  return <>Jawaban Benar: {answer}</>;
+  return <>Answer: {answer}</>;
 };
 
 type MainQuestionType = {
   number: number;
+  subjectQuestionId: number;
   questionType: string;
   questionItem: {
     answers: (typeof answers.$inferSelect)[];
@@ -190,25 +192,38 @@ const MainQuestion = ({
   questionItem,
   number,
   questionType,
+  subjectQuestionId,
 }: MainQuestionType) => {
-  const questions = [
-    {
-      answer: "Communicating messages between the brain and body parts",
-      isCorrect: true,
+  const [questions, setQuestions] = useState<
+    MainQuestionType["questionItem"]["answers"]
+  >([]);
+
+  const { isLoading, mutate } = api.ai.createAnswers.useMutation({
+    onSuccess: (data) => {
+      setQuestions(data)
+      console.log(data);
     },
-    {
-      answer: "Communicating messages between the brain and body parts",
-      isCorrect: false,
+    onError: (error) => {
+      console.log(error);
     },
-    {
-      answer: "Communicating messages between the brain and body parts",
-      isCorrect: false,
-    },
-    {
-      answer: "Communicating messages between the brain and body parts",
-      isCorrect: false,
-    },
-  ];
+  });
+
+  useEffect(() => {
+    const getQuestions = async () => {
+      if (questionItem.answers.length > 0) {
+        setQuestions(questionItem.answers);
+      } else {
+        mutate({
+          prompt: questionItem.question,
+          questionId: questionItem.id,
+          subjectQuestionId,
+        });
+      }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    getQuestions();
+  }, [questionItem, mutate, subjectQuestionId]);
 
   return (
     <div className="mb-4 flex flex-col rounded-lg border bg-white p-4 shadow-sm">
@@ -222,21 +237,27 @@ const MainQuestion = ({
       <div
         className={cn(
           "text-sm md:text-base",
-          questionType !== "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
+          questionType === "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
         )}
       >
-        {questions.length === 1 ? (
-          <ShortAnswerQuestion answer={questions[0]?.answer ?? ""} />
+        {isLoading ? (
+          <div>Loading...</div>
         ) : (
           <>
-            {questions.map((answer, index) => (
-              <MultipleChoiceAnswer
-                key={index}
-                index={index}
-                isCorrect={answer.isCorrect}
-                answer={answer.answer}
-              />
-            ))}
+            {questions.length === 1 ? (
+              <ShortAnswerQuestion answer={questions[0]?.answer ?? ""} />
+            ) : (
+              <>
+                {questions.map((answer, index) => (
+                  <MultipleChoiceAnswer
+                    key={index}
+                    index={index}
+                    isCorrect={answer.isCorrect}
+                    answer={answer.answer}
+                  />
+                ))}
+              </>
+            )}
           </>
         )}
       </div>
