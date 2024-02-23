@@ -23,14 +23,18 @@ export function Profile() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <Link href={"/history"} className="w-full">Questions List</Link>
-          </DropdownMenuItem>
+          <Link href={"/history"} className="w-full">
+            <DropdownMenuItem className="cursor-pointer">
+              Questions List
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <Link href={"/api/auth/signout"} className="w-full">Log out</Link>
-        </DropdownMenuItem>
+        <Link href={"/api/auth/signout"} className="w-full">
+          <DropdownMenuItem className="cursor-pointer">
+            Log out
+          </DropdownMenuItem>
+        </Link>
       </DropdownMenuContent>
     </DropdownMenu>
   );
