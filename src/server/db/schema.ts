@@ -174,7 +174,7 @@ export const subjectQuestions = createTable("subject_questions", {
   createdAt: timestamp("created_at")
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
-  updatedAt: timestamp("updated_at"),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   authorId: varchar("author_id", { length: 255 })
     .notNull()
     .references(() => users.id),
@@ -196,7 +196,7 @@ export const questions = createTable("questions", {
   question: text("question").notNull(),
   subjectQuestionsId: integer("subject_questions_id").references(
     () => subjectQuestions.id,
-  ),
+  ).notNull(),
 });
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
@@ -209,7 +209,9 @@ export const questionsRelations = relations(questions, ({ one, many }) => ({
 
 export const answers = createTable("answers", {
   id: serial("id").primaryKey(),
-  questionId: integer("questions_id").references(() => questions.id),
+  questionId: integer("questions_id")
+    .references(() => questions.id)
+    .notNull(),
   answer: varchar("answer", { length: 255 }).notNull(),
   isCorrect: boolean("isCorrect").notNull(),
 });
