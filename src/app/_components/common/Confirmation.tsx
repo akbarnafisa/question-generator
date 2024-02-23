@@ -13,7 +13,7 @@ interface ConfirmationProps {
   confirmText: string;
   contentText: string;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
 export default function Confirmation({
@@ -28,7 +28,7 @@ export default function Confirmation({
   const [openPopover, setOpenPopover] = useState(false);
 
   return (
-    <Popover open={openPopover}>
+    <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger onClick={() => setOpenPopover(true)}>
         {buttonTrigger}
       </PopoverTrigger>
@@ -38,7 +38,7 @@ export default function Confirmation({
           <Button
             onClick={() => {
               setOpenPopover(false);
-              onCancel();
+              onCancel && onCancel();
             }}
             className="mr-2"
             variant="outline"
@@ -47,7 +47,10 @@ export default function Confirmation({
             {cancelText}
           </Button>
 
-          <Button variant={variant} size="sm" onClick={() => onConfirm()}>
+          <Button variant={variant} size="sm" onClick={() => {
+            setOpenPopover(false)
+            onConfirm()
+          }}>
             {confirmText}
           </Button>
         </div>
