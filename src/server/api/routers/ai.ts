@@ -201,6 +201,53 @@ export const aiRouter = createTRPCRouter({
       };
     }),
 
+  deleteSubjectQuestions: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const { id } = input;
+
+      const sessionId = ctx.session.user.sessionId;
+
+      const user = await ctx.db.query.sessions.findFirst({
+        where: eq(sessions.sessionToken, sessionId),
+        with: { user: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User not found",
+        });
+      }
+
+      const getQuestions = await ctx.db.query.subjectQuestions.findFirst({
+        where: eq(subjectQuestions.id, id),
+      });
+
+      if (!getQuestions) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Question with ID ${id} is not found`,
+        });
+      }
+
+      if (getQuestions.authorId !== user.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You can not see this question",
+        });
+      }
+
+      await ctx.db
+        .delete(subjectQuestions)
+        .where(eq(subjectQuestions.id, Number(id)))
+        .returning();
+
+      return {
+        success: true,
+      };
+    }),
+
   createAnswers: protectedProcedure
     .input(
       z.object({
@@ -254,7 +301,7 @@ export const aiRouter = createTRPCRouter({
 
       const answer = generateAnswer.choices[0]?.text ?? "";
 
-      let answerArray:  Omit<typeof answers.$inferSelect, "id">[] = [];
+      let answerArray: Omit<typeof answers.$inferSelect, "id">[] = [];
 
       try {
         answerArray = answer
@@ -278,15 +325,11 @@ export const aiRouter = createTRPCRouter({
       } catch (error) {
         throw new TRPCError({
           code: "UNPROCESSABLE_CONTENT",
-          message:
-            "Unable to answer questions, please and try again.",
+          message: "Unable to answer questions, please and try again.",
         });
       }
 
-      const answerDb = ctx.db
-        .insert(answers)
-        .values(answerArray)
-        .returning();
+      const answerDb = ctx.db.insert(answers).values(answerArray).returning();
 
       return answerDb;
     }),
