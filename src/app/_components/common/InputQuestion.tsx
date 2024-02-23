@@ -51,8 +51,8 @@ export default function InputQuestion({
               <textarea
                 ref={$input}
                 id="home-prompt"
-                maxLength={500}
-                minLength={2}
+                maxLength={300}
+                minLength={10}
                 className="min-w-[50%] flex-[1_0_50%] resize-none border-0 bg-transparent py-3 pl-1 pr-2 text-sm leading-relaxed text-white shadow-none outline-none ring-0 [scroll-padding-block:0.75rem] selection:bg-teal-300 selection:text-black placeholder:text-zinc-400 disabled:bg-transparent disabled:opacity-80"
                 rows={1}
                 placeholder='A "report an issue" modal'
