@@ -14,6 +14,7 @@ import { api } from "~/trpc/react";
 import { useEffect } from "react";
 import { useToast } from "~/components/ui/use-toast";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   session: Session | null;
@@ -47,7 +48,7 @@ export default function HistoryPage({ session }: Props) {
           </Button>
         </div>
         {isLoading ? (
-          <div>Loading...</div>
+          <div className="flex items-center justify-center py-16"><Loader2 className="animate-spin" /></div>
         ) : (
           <>
             {data?.length === 0 ? (
