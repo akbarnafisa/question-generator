@@ -80,6 +80,12 @@
 }
 
 
+.question-page-content-height {
+  height: calc(100vh - 133px);
+  overflow-y: auto;
+}
+
+
 @media (max-width: 768px) {
   .container {
     padding-right: 16px;
