@@ -23,12 +23,28 @@ interface Props {
 
 export default function HistoryPage({ session }: Props) {
   const { toast } = useToast();
-  const [openPopover, setOpenPopover] = useState(false);
 
-  const { data, error, isError, isLoading } =
+  const { data, error, isError, isLoading, refetch } =
     api.ai.getAllSubjectQuestions.useQuery(undefined, {
       refetchOnWindowFocus: false,
     });
+
+  const { mutate } = api.ai.deleteSubjectQuestions.useMutation({
+    onSuccess: async () => {
+      await refetch();
+      toast({
+        title: "Question Deleted",
+        description: "Question has been deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Unable to delete question",
+        description: error.message,
+      });
+    },
+  });
 
   useEffect(() => {
     if (isError) {
@@ -39,6 +55,12 @@ export default function HistoryPage({ session }: Props) {
       });
     }
   }, [isError, error, toast]);
+
+  const onDeleteQuestions = (id: number) => {
+    mutate({
+      id: Number(id),
+    });
+  };
 
   return (
     <div className="container mt-24">
@@ -61,8 +83,8 @@ export default function HistoryPage({ session }: Props) {
                   No Questions Yet
                 </h2>
                 <p className="text-gray-500">
-                  You haven't added any questions. Start by clicking the "Add
-                  New Question" button.
+                  You haven&apos;t added any questions. Start by clicking the
+                  &quot;Add New Question&quot; button.
                 </p>
                 <Button>
                   <Link href="/">Add New Question</Link>
@@ -115,10 +137,7 @@ export default function HistoryPage({ session }: Props) {
                               contentText="Do you want to delete this item?"
                               variant="destructive"
                               onConfirm={() => {
-                                console.log(123);
-                              }}
-                              onCancel={() => {
-                                console.log(312);
+                                onDeleteQuestions(question.id);
                               }}
                             />
                           </TableCell>
