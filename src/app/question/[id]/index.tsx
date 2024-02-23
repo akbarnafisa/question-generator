@@ -244,7 +244,7 @@ const MainQuestion = ({
           questionType === "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
         )}
       >
-        {true ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="animate-spin" />
           </div>
