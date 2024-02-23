@@ -4,11 +4,17 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { api } from "~/trpc/react";
 import { useToast } from "~/components/ui/use-toast";
 import { type answers, type questions } from "~/server/db/schema";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface Props {
   session: Session | null;
@@ -46,19 +52,19 @@ export default function QuestionPage({ questionId }: Props) {
   return (
     <div
       className={cn(
-        "question-page-height mt-14 grid h-screen w-full transition-all",
-        showSideBar ? " md:grid-cols-[280px_1fr]" : " md:grid-cols-[72px_1fr]",
+        "question-page-height mt-12 flex h-screen w-full transition-all",
+        // showSideBar ? " md:grid-cols-[280px_1fr]" : " md:grid-cols-[72px_1fr]",
       )}
     >
-      <div className="relative hidden border-r md:block">
+      <div className="relative hidden border-r lg:block">
         <div
           className={cn(
-            "fixed flex h-full max-h-screen flex-col gap-2",
+            " z-10  flex flex-col gap-2",
             showSideBar ? "w-[280px]" : "w-[72px]",
           )}
         >
-          <nav className="mt-8 block items-start px-4 text-sm font-medium ">
-            <div className="mb-4 flex items-center justify-between">
+          <nav className="block items-start text-sm font-medium ">
+            <div className="mb-8 flex items-center justify-between border-b px-4 py-7">
               <div className={cn(showSideBar ? "opacity-100" : "opacity-0")}>
                 Questions
               </div>
@@ -79,38 +85,48 @@ export default function QuestionPage({ questionId }: Props) {
               <div>Loading...</div>
             ) : (
               subjectQuestionsData?.questions.map((item, index) => (
-                <Link
-                  className="mb-4 flex w-full items-center text-gray-500 hover:text-gray-900 "
-                  key={item.id}
-                  href={`#${item.id}`}
-                >
-                  <NumberQuestion number={index + 1} />
-                  <div
-                    className={cn(
-                      "ml-2 overflow-hidden truncate",
-                      "text-gray-900",
-                    )}
-                  >
-                    {item.question}
-                  </div>
-                </Link>
+                <TooltipProvider key={item.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        className="mb-4 flex w-full items-center px-4 text-gray-500 hover:text-gray-900"
+                        href={`#${item.id}`}
+                      >
+                        <NumberQuestion number={index + 1} />
+                        <div
+                          className={cn(
+                            "ml-2 overflow-hidden truncate",
+                            "text-gray-900",
+                          )}
+                        >
+                          {item.question}
+                        </div>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{item.question}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))
             )}
           </nav>
         </div>
       </div>
-      <div className="flex flex-col">
-        <div className="fixed flex w-full items-center border-b bg-white px-4 py-6 shadow-sm lg:px-36">
-          <h1 className="text-lg font-semibold md:text-xl">
-            {subjectQuestionsData?.prompt ?? "Loading questions..."}
-          </h1>
+      <div className="flex flex-col w-full">
+        <div className="flex items-center border-b bg-white px-4 py-6 shadow-sm  w-full">
+          <div className="mx-auto max-w-2xl  w-full">
+            <h1 className="text-lg font-semibold truncate md:text-xl">
+              {subjectQuestionsData?.prompt ?? "Loading questions..."}
+            </h1>
+          </div>
         </div>
-        <main className="mt-16 flex flex-1 flex-col gap-4 bg-gray-100 px-4 py-12 md:gap-8 lg:px-36">
-          {isLoading ? (
-            <div>Loading...</div>
-          ) : (
-            <>
-              <div>
+        <div className="flex flex-1 flex-col gap-4 bg-gray-100 md:gap-8 question-page-content-height">
+          <div className="mx-auto max-w-3xl px-4 pt-10 pb-28">
+            {isLoading ? (
+              <div>Loading...</div>
+            ) : (
+              <>
                 {subjectQuestionsData?.questions.map((questionItem, index) => (
                   <MainQuestion
                     key={questionItem.id}
@@ -119,10 +135,10 @@ export default function QuestionPage({ questionId }: Props) {
                     questionType={subjectQuestionsData.question_type}
                   />
                 ))}
-              </div>
-            </>
-          )}
-        </main>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -148,11 +164,11 @@ const MultipleChoiceAnswer = ({
     <div className="mb-4 flex items-center gap-3">
       <div
         className={cn(
-          "item-center flex h-[32px] w-[32px] items-center justify-center rounded-full border-2 text-sm font-semibold",
+          "item-center flex min-h-[28px] min-w-[28px] items-center justify-center rounded-full border-2 text-sm font-semibold",
           isCorrect && ["bg-green-100", "border-green-500", "text-green-500"],
         )}
       >
-        <p>{MultipleChoiseOptions[index + 1]}</p>
+        {MultipleChoiseOptions[index + 1]}
       </div>
       <div>{answer}</div>
     </div>
@@ -178,7 +194,8 @@ const MainQuestion = ({
 }: MainQuestionType) => {
   const questions = [
     {
-      answer: "Communicating messages between the brain and body parts",
+      answer:
+        "Communicating messages between the brain and body parts",
       isCorrect: true,
     },
     {
@@ -196,36 +213,34 @@ const MainQuestion = ({
   ];
 
   return (
-    <div className="mb-4 flex items-start rounded-lg border bg-white p-4 shadow-sm">
-      <NumberQuestion number={number} />
-      <div className="ml-4">
-        <h3
-          className="mb-4 text-lg font-semibold md:text-xl"
-          id={`${questionItem.id}`}
-          key={questionItem.id}
-        >
-          {questionItem.question}
-        </h3>
-        <div
-          className={cn(
-            questionType !== "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
-          )}
-        >
-          {questions.length === 1 ? (
-            <ShortAnswerQuestion answer={questions[0]?.answer ?? ""} />
-          ) : (
-            <>
-              {questions.map((answer, index) => (
-                <MultipleChoiceAnswer
-                  key={index}
-                  index={index}
-                  isCorrect={answer.isCorrect}
-                  answer={answer.answer}
-                />
-              ))}
-            </>
-          )}
-        </div>
+    <div className="mb-4 flex flex-col rounded-lg border bg-white p-4 shadow-sm">
+      <h3
+        className="mb-4 flex items-center font-semibold after:text-lg md:text-xl"
+        id={`${questionItem.id}`}
+        key={questionItem.id}
+      >
+        {number}. {questionItem.question}
+      </h3>
+      <div
+        className={cn(
+          "text-sm md:text-base",
+          questionType !== "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
+        )}
+      >
+        {questions.length === 1 ? (
+          <ShortAnswerQuestion answer={questions[0]?.answer ?? ""} />
+        ) : (
+          <>
+            {questions.map((answer, index) => (
+              <MultipleChoiceAnswer
+                key={index}
+                index={index}
+                isCorrect={answer.isCorrect}
+                answer={answer.answer}
+              />
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
