@@ -11,10 +11,11 @@ import {
   Table,
 } from "~/components/ui/table";
 import { api } from "~/trpc/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "~/components/ui/use-toast";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+import Confirmation from "../_components/common/Confirmation";
 
 interface Props {
   session: Session | null;
@@ -22,6 +23,7 @@ interface Props {
 
 export default function HistoryPage({ session }: Props) {
   const { toast } = useToast();
+  const [openPopover, setOpenPopover] = useState(false);
 
   const { data, error, isError, isLoading } =
     api.ai.getAllSubjectQuestions.useQuery(undefined, {
@@ -48,7 +50,9 @@ export default function HistoryPage({ session }: Props) {
           </Button>
         </div>
         {isLoading ? (
-          <div className="flex items-center justify-center py-16"><Loader2 className="animate-spin" /></div>
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="animate-spin" />
+          </div>
         ) : (
           <>
             {data?.length === 0 ? (
@@ -82,7 +86,10 @@ export default function HistoryPage({ session }: Props) {
                       return (
                         <TableRow key={question.id}>
                           <TableCell className="max-w-[400px] overflow-hidden truncate font-medium">
-                            <Link href={`/question/${question.id}`} className="underline">
+                            <Link
+                              href={`/question/${question.id}`}
+                              className="underline"
+                            >
                               {question.prompt}
                             </Link>
                           </TableCell>
@@ -90,8 +97,31 @@ export default function HistoryPage({ session }: Props) {
                           <TableCell className="capitalize">
                             {question.question_type.replace("_", " ")}
                           </TableCell>
-                          <TableCell>{question.subject}</TableCell>
-                          <TableCell>{question.topic}</TableCell>
+                          <TableCell className="capitalize">
+                            {question.subject}
+                          </TableCell>
+                          <TableCell className="capitalize">
+                            {question.topic}
+                          </TableCell>
+                          <TableCell>
+                            <Confirmation
+                              buttonTrigger={
+                                <Button size={"icon"} variant={"ghost"}>
+                                  <Trash2 size={16} />
+                                </Button>
+                              }
+                              cancelText="Cancel"
+                              confirmText="Delete"
+                              contentText="Do you want to delete this item?"
+                              variant="destructive"
+                              onConfirm={() => {
+                                console.log(123);
+                              }}
+                              onCancel={() => {
+                                console.log(312);
+                              }}
+                            />
+                          </TableCell>
                         </TableRow>
                       );
                     })}
