@@ -53,7 +53,6 @@ export default function QuestionPage({ questionId }: Props) {
     <div
       className={cn(
         "question-page-height mt-12 flex h-screen w-full transition-all",
-        // showSideBar ? " md:grid-cols-[280px_1fr]" : " md:grid-cols-[72px_1fr]",
       )}
     >
       <div className="relative hidden border-r lg:block">
@@ -113,16 +112,16 @@ export default function QuestionPage({ questionId }: Props) {
           </nav>
         </div>
       </div>
-      <div className="flex flex-col w-full">
-        <div className="flex items-center border-b bg-white px-4 py-6 shadow-sm  w-full">
-          <div className="mx-auto max-w-2xl  w-full">
-            <h1 className="text-lg font-semibold truncate md:text-xl">
+      <div className="flex w-full flex-col">
+        <div className="flex w-full items-center border-b bg-white px-4 py-6  shadow-sm">
+          <div className="mx-auto w-full  max-w-2xl">
+            <h1 className="truncate text-lg font-semibold md:text-xl">
               {subjectQuestionsData?.prompt ?? "Loading questions..."}
             </h1>
           </div>
         </div>
-        <div className="flex flex-1 flex-col gap-4 bg-gray-100 md:gap-8 question-page-content-height">
-          <div className="mx-auto max-w-3xl px-4 pt-10 pb-28">
+        <div className="question-page-content-height flex flex-1 flex-col gap-4 bg-gray-100 md:gap-8">
+          <div className="mx-auto max-w-3xl px-4 pb-28 pt-10">
             {isLoading ? (
               <div>Loading...</div>
             ) : (
@@ -194,8 +193,7 @@ const MainQuestion = ({
 }: MainQuestionType) => {
   const questions = [
     {
-      answer:
-        "Communicating messages between the brain and body parts",
+      answer: "Communicating messages between the brain and body parts",
       isCorrect: true,
     },
     {
