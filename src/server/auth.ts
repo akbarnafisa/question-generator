@@ -42,21 +42,25 @@ declare module "next-auth" {
  */
 export const authOptions: NextAuthOptions = {
   // The callbacks object defines functions that run during the authentication process
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     // The session callback is used to manage user session data
     // It takes an object with the current session and user and returns the updated session
     // In this case, it's adding the user's id to the session object
-    session: async ({ session, user }) => {
+    session: async ({ session, token }) => {
       const dbSession = await db.query.sessions.findFirst({
-        where: eq(sessions.userId, user.id),
+        where: eq(sessions.userId, token.sub ?? ""),
       });
 
       return {
         ...session,
         user: {
+          id: token.sub,
           sessionId: dbSession?.sessionToken,
-          name: user.name,
-          image: user.image,
+          name: token.name,
+          image: token.picture,
         },
       };
     },
