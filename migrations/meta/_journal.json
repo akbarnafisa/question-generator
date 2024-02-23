@@ -22,6 +22,13 @@
       "when": 1708593668250,
       "tag": "0002_moaning_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1708670868324,
+      "tag": "0003_daily_karnak",
+      "breakpoints": true
     }
   ]
 }
