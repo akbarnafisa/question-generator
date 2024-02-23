@@ -29,6 +29,13 @@
       "when": 1708670868324,
       "tag": "0003_daily_karnak",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1708695122991,
+      "tag": "0004_flaky_lily_hollister",
+      "breakpoints": true
     }
   ]
 }
