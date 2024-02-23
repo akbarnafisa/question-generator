@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Session } from "next-auth";
 import { api } from "~/trpc/react";
@@ -81,7 +81,9 @@ export default function QuestionPage({ questionId }: Props) {
               </Button>
             </div>
             {isLoading ? (
-              <div>Loading...</div>
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="animate-spin" />
+              </div>
             ) : (
               subjectQuestionsData?.questions.map((item, index) => (
                 <TooltipProvider key={item.id}>
@@ -123,7 +125,9 @@ export default function QuestionPage({ questionId }: Props) {
         <div className="question-page-content-height flex flex-1 flex-col gap-4 bg-gray-100 md:gap-8">
           <div className="mx-auto max-w-3xl px-4 pb-28 pt-10">
             {isLoading ? (
-              <div>Loading...</div>
+              <div className="flex items-center justify-center pt-56">
+                <Loader2 className="animate-spin" />
+              </div>
             ) : (
               <>
                 {subjectQuestionsData?.questions.map((questionItem, index) => (
@@ -200,7 +204,7 @@ const MainQuestion = ({
 
   const { isLoading, mutate } = api.ai.createAnswers.useMutation({
     onSuccess: (data) => {
-      setQuestions(data)
+      setQuestions(data);
       console.log(data);
     },
     onError: (error) => {
@@ -240,8 +244,10 @@ const MainQuestion = ({
           questionType === "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
         )}
       >
-        {isLoading ? (
-          <div>Loading...</div>
+        {true ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="animate-spin" />
+          </div>
         ) : (
           <>
             {questions.length === 1 ? (
