@@ -113,6 +113,7 @@ export const aiRouter = createTRPCRouter({
       }
 
       return {
+        id: result.id,
         prompt: result.prompt,
         grade: result.grade,
         subject: result.subject,
@@ -122,6 +123,7 @@ export const aiRouter = createTRPCRouter({
         questions: result.questions,
       };
     }),
+
   createSubjectQuestions: protectedProcedure
     .input(z.object({ prompt: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -203,11 +205,12 @@ export const aiRouter = createTRPCRouter({
     .input(
       z.object({
         prompt: z.string(),
+        subjectQuestionId: z.number(),
         questionId: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { prompt, questionId } = input;
+      const { prompt, subjectQuestionId, questionId } = input;
 
       const sessionId = ctx.session.user.sessionId;
 
@@ -224,13 +227,13 @@ export const aiRouter = createTRPCRouter({
       }
 
       const getQuestions = await ctx.db.query.subjectQuestions.findFirst({
-        where: eq(subjectQuestions.id, questionId),
+        where: eq(subjectQuestions.id, subjectQuestionId),
       });
 
       if (!getQuestions) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: `Question with ID ${questionId} is not found`,
+          message: `Question with ID ${subjectQuestionId} is not found`,
         });
       }
 
@@ -251,13 +254,38 @@ export const aiRouter = createTRPCRouter({
 
       const answer = generateAnswer.choices[0]?.text ?? "";
 
+      let answerArray:  Omit<typeof answers.$inferSelect, "id">[] = [];
+
+      try {
+        answerArray = answer
+          .split("O:")
+          .map((v) => v.replaceAll("\n", "").trim())
+          .filter(Boolean)
+          .map((v) => {
+            if (v.includes("_CORRECT_")) {
+              return {
+                answer: unescape(v.replaceAll("_CORRECT_", "").trim()),
+                isCorrect: true,
+                questionId,
+              };
+            }
+            return {
+              answer: unescape(v),
+              isCorrect: false,
+              questionId,
+            };
+          });
+      } catch (error) {
+        throw new TRPCError({
+          code: "UNPROCESSABLE_CONTENT",
+          message:
+            "Unable to answer questions, please and try again.",
+        });
+      }
+
       const answerDb = ctx.db
         .insert(answers)
-        .values({
-          answer,
-          isCorrect: true,
-          questionId: getQuestions.id,
-        })
+        .values(answerArray)
         .returning();
 
       return answerDb;
@@ -278,9 +306,10 @@ const getGenerateAnswerPrompt = (prompt: string, questionType: string) => {
   return `
     Give 4 options for multiple choice and give 1 correct answer.
     The result must follow these following rules:
+    - give 4 options
     - format the questions in plain text
     - begin each options with "O:" to denote the options
-    - end each question with "_END_"
+    - end the correct answer with "_CORRECT_" to denote the correct answer
 
     question: "${prompt}"
   `;
