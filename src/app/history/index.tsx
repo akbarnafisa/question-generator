@@ -86,7 +86,7 @@ export default function HistoryPage({ session }: Props) {
                             </Link>
                           </TableCell>
                           <TableCell>{question.total_questions}</TableCell>
-                          <TableCell>
+                          <TableCell className="capitalize">
                             {question.question_type.replace("_", " ")}
                           </TableCell>
                           <TableCell>{question.subject}</TableCell>
