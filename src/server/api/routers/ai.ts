@@ -16,7 +16,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const MAX_QUESTIONS = 10;
+const MAX_QUESTIONS = 25;
 
 type ExtractQuestions = {
   grade: string;
