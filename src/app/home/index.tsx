@@ -28,7 +28,7 @@ const TEMPLATE_QUESTIONS = [
   },
   {
     title: "Geography questions",
-    content: "2 Geography questions, 8th grade, about Asian countries",
+    content: "2 Geography short answer questions, 8th grade, about Asian countries",
   },
 ];
 
