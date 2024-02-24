@@ -88,7 +88,7 @@ export default function QuestionPage({ questionId }: Props) {
               </Button>
             </div>
             {isLoading ? (
-              <div className="flex items-center justify-center py-4">
+              <div className="flex items-center justify-center pt-16">
                 <Loader2 className="animate-spin" />
               </div>
             ) : (
@@ -217,6 +217,8 @@ const MainQuestion = ({
       console.log(data);
     },
     onError: (error) => {
+      // TODO: handle error
+      // TODO: handle edit questions
       console.log(error);
     },
   });
@@ -249,12 +251,12 @@ const MainQuestion = ({
       </h3>
       <div
         className={cn(
-          "text-sm md:text-base",
+          "text-sm md:text-base relative",
           questionType === "short_answer" ? "min-h-[50px]" : "min-h-[200px]",
         )}
       >
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center absolute left-0 right-0 top-0 bottom-0">
             <Loader2 className="animate-spin" />
           </div>
         ) : (
