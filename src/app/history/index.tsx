@@ -24,6 +24,7 @@ interface Props {
 export default function HistoryPage({ session }: Props) {
   const { toast } = useToast();
 
+  // TODO: create pagination
   const { data, error, isError, isLoading, refetch } =
     api.ai.getAllSubjectQuestions.useQuery(undefined, {
       refetchOnWindowFocus: false,
