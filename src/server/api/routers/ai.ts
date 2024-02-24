@@ -9,7 +9,7 @@ import {
   subjectQuestions,
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { unescape } from "html-escaper";
 
 const openai = new OpenAI({
@@ -48,6 +48,7 @@ export const aiRouter = createTRPCRouter({
 
     const result = await ctx.db.query.subjectQuestions.findMany({
       where: eq(subjectQuestions.authorId, user.userId),
+      orderBy: [desc(subjectQuestions.createdAt)],
     });
 
     if (!result) {
@@ -167,7 +168,7 @@ export const aiRouter = createTRPCRouter({
           grade: grade,
           subject: subject,
           topic: topic,
-          totalQuestions: total_questions,
+          totalQuestions: quizResultArray.length,
           questionType: question_type,
           authorId: user.userId,
           prompt,
@@ -303,15 +304,32 @@ export const aiRouter = createTRPCRouter({
 
       let answerArray: Omit<typeof answers.$inferSelect, "id">[] = [];
 
+      const isShortAnswer = getQuestions.questionType === "short_answer";
+
       try {
         answerArray = answer
-          .split("O:")
-          .map((v) => v.replaceAll("\n", "").trim())
+          .split("\n")
+          .filter((v) => {
+            if (isShortAnswer) {
+              return true;
+            }
+            return v.includes("O:") || v.includes("C:");
+          })
+          .map((v) => v.replaceAll("O:", "").trim())
           .filter(Boolean)
           .map((v) => {
-            if (v.includes("_CORRECT_")) {
+
+            if (isShortAnswer) {
               return {
-                answer: unescape(v.replaceAll("_CORRECT_", "").trim()),
+                answer: unescape(v),
+                isCorrect: true,
+                questionId,
+              };
+            }
+
+            if (v.includes("C:")) {
+              return {
+                answer: unescape(v.replaceAll("C:", "").trim()),
                 isCorrect: true,
                 questionId,
               };
@@ -328,6 +346,12 @@ export const aiRouter = createTRPCRouter({
           message: "Unable to answer questions, please and try again.",
         });
       }
+
+      console.log({
+        prompt,
+        answer,
+        answerArray,
+      });
 
       const answerDb = ctx.db.insert(answers).values(answerArray).returning();
 
@@ -349,10 +373,10 @@ const getGenerateAnswerPrompt = (prompt: string, questionType: string) => {
   return `
     Give 4 options for multiple choice and give 1 correct answer.
     The result must follow these following rules:
+    - begin the wrong options with "O:" to denote the options, 
+    - begin the correct options with "C:" to denote the option, 
     - give 4 options
     - format the questions in plain text
-    - begin each options with "O:" to denote the options
-    - end the correct answer with "_CORRECT_" to denote the correct answer
 
     question: "${prompt}"
   `;
@@ -368,7 +392,7 @@ const getQuestions = async ({
   const generateQuiz = await openai.completions.create({
     model: "gpt-3.5-turbo-instruct",
     stream: false,
-    temperature: 0.5,
+    temperature: 1,
     max_tokens: 1000,
     prompt: createQuestionsPrompt({
       grade,
@@ -380,6 +404,7 @@ const getQuestions = async ({
   });
 
   const quizResult = generateQuiz.choices[0]?.text ?? "";
+
   let quizResultArray: string[] = [];
 
   try {
