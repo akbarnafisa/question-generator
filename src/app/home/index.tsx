@@ -73,7 +73,7 @@ export default function Home({ session }: Props) {
     <div className="container">
       <div className="my-12 flex flex-col items-center justify-center py-[26vh]">
         <h2 className="mb-2 text-3xl font-bold tracking-tighter md:text-4xl/tight">
-          AI-Powered Quiz Generator
+          AI-Powered Question Generator
         </h2>
         <p className="mb-8">
           Elevate your study sessions with quick, curriculum-aligned quizzes
