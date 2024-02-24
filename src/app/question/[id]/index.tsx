@@ -49,6 +49,13 @@ export default function QuestionPage({ questionId }: Props) {
     }
   }, [isError, error, toast]);
 
+  useEffect(() => {
+    if (subjectQuestionsData) {
+      document.title =
+        subjectQuestionsData.prompt + " - Quiz question generator tool";
+    }
+  }, [subjectQuestionsData]);
+
   return (
     <div
       className={cn(
@@ -63,7 +70,7 @@ export default function QuestionPage({ questionId }: Props) {
           )}
         >
           <nav className="block items-start text-sm font-medium ">
-            <div className="mb-8 flex items-center justify-between border-b px-4 py-7">
+            <div className="flex items-center justify-between border-b px-4 py-7">
               <div className={cn(showSideBar ? "opacity-100" : "opacity-0")}>
                 Questions
               </div>
@@ -85,31 +92,33 @@ export default function QuestionPage({ questionId }: Props) {
                 <Loader2 className="animate-spin" />
               </div>
             ) : (
-              subjectQuestionsData?.questions.map((item, index) => (
-                <TooltipProvider key={item.id}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        className="mb-4 flex w-full items-center px-4 text-gray-500 hover:text-gray-900"
-                        href={`#${item.id}`}
-                      >
-                        <NumberQuestion number={index + 1} />
-                        <div
-                          className={cn(
-                            "ml-2 overflow-hidden truncate",
-                            "text-gray-900",
-                          )}
+              <div className="question-navbar-container py-8">
+                {subjectQuestionsData?.questions.map((item, index) => (
+                  <TooltipProvider key={item.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          className="mb-4 flex w-full items-center px-4 text-gray-500 hover:text-gray-900"
+                          href={`#${item.id}`}
                         >
-                          {item.question}
-                        </div>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{item.question}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))
+                          <NumberQuestion number={index + 1} />
+                          <div
+                            className={cn(
+                              "ml-2 overflow-hidden truncate",
+                              "text-gray-900",
+                            )}
+                          >
+                            {item.question}
+                          </div>
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{item.question}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
             )}
           </nav>
         </div>
