@@ -17,11 +17,7 @@ import Link from "next/link";
 import { Loader2, Trash2 } from "lucide-react";
 import Confirmation from "../_components/common/Confirmation";
 
-interface Props {
-  session: Session | null;
-}
-
-export default function HistoryPage({ session }: Props) {
+export default function HistoryPage() {
   const { toast } = useToast();
 
   // TODO: create pagination
