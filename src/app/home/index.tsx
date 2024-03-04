@@ -28,7 +28,8 @@ const TEMPLATE_QUESTIONS = [
   },
   {
     title: "Geography questions",
-    content: "2 Geography short answer questions, 8th grade, about Asian countries",
+    content:
+      "2 Geography short answer questions, 8th grade, about Asian countries",
   },
 ];
 
@@ -36,9 +37,12 @@ export default function Home({ session }: Props) {
   const [content, setContent] = useState<string>("");
   const router = useRouter();
   const { toast } = useToast();
+  const utils = api.useUtils();
+
 
   const { isLoading, mutate } = api.ai.createSubjectQuestions.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await utils.ai.getUser.refetch(undefined);
       router.push(`/question/${data.id}`);
     },
     onError: (error) => {

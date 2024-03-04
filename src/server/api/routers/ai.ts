@@ -7,6 +7,7 @@ import {
   questions,
   sessions,
   subjectQuestions,
+  users,
 } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { desc, eq } from "drizzle-orm";
@@ -31,6 +32,41 @@ type ExtractQuestionsError = {
 };
 
 export const aiRouter = createTRPCRouter({
+  getUser: protectedProcedure.query(async ({ ctx }) => {
+    const sessionId = ctx.session.user.sessionId;
+
+    const user = await ctx.db.query.sessions.findFirst({
+      where: eq(sessions.sessionToken, sessionId),
+      with: { user: true },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "User not found",
+      });
+    }
+
+    const result = await ctx.db.query.subjectQuestions.findMany({
+      where: eq(subjectQuestions.authorId, user.userId),
+      orderBy: [desc(subjectQuestions.createdAt)],
+    });
+
+    if (!result) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Questions not found",
+      });
+    }
+
+    return {
+      id: user.userId,
+      name: user.user.name,
+      image: user.user.image,
+      token: user.user.token,
+    };
+  }),
+
   getAllSubjectQuestions: protectedProcedure.query(async ({ ctx }) => {
     const sessionId = ctx.session.user.sessionId;
 
@@ -153,6 +189,14 @@ export const aiRouter = createTRPCRouter({
           message: `Total questions should not exceed ${MAX_QUESTIONS}`,
         });
       }
+      const currentToken = user.user?.token ?? 0;
+
+      if (currentToken < total_questions) {
+        throw new TRPCError({
+          code: "UNPROCESSABLE_CONTENT",
+          message: `Current token is not enough to create ${total_questions} questions`,
+        });
+      }
 
       const quizResultArray = await getQuestions({
         grade,
@@ -174,6 +218,13 @@ export const aiRouter = createTRPCRouter({
           prompt,
         })
         .returning();
+
+      await ctx.db
+        .update(users)
+        .set({
+          token: currentToken - quizResultArray.length,
+        })
+        .where(eq(users.id, user.userId));
 
       if (!subjectQuestionsDb) {
         throw new TRPCError({
@@ -318,7 +369,6 @@ export const aiRouter = createTRPCRouter({
           .map((v) => v.replaceAll("O:", "").trim())
           .filter(Boolean)
           .map((v) => {
-
             if (isShortAnswer) {
               return {
                 answer: unescape(v),
@@ -346,12 +396,6 @@ export const aiRouter = createTRPCRouter({
           message: "Unable to answer questions, please and try again.",
         });
       }
-
-      console.log({
-        prompt,
-        answer,
-        answerArray,
-      });
 
       const answerDb = ctx.db.insert(answers).values(answerArray).returning();
 

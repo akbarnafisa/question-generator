@@ -215,7 +215,6 @@ const MainQuestion = ({
   const { isLoading, mutate } = api.ai.createAnswers.useMutation({
     onSuccess: (data) => {
       setQuestions(data);
-      console.log(data);
     },
     onError: (error) => {
       // TODO: handle error

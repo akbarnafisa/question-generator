@@ -43,6 +43,7 @@ export const users = createTable(
     }).default(sql`CURRENT_TIMESTAMP`),
     // 'image' column, which is a variable character string with a maximum length of 255
     image: varchar("image", { length: 255 }),
+    token: integer("token").default(30),
   },
 );
 

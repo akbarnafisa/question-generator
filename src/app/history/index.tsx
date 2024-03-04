@@ -11,7 +11,7 @@ import {
   Table,
 } from "~/components/ui/table";
 import { api } from "~/trpc/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToast } from "~/components/ui/use-toast";
 import Link from "next/link";
 import { Loader2, Trash2 } from "lucide-react";
