@@ -1,0 +1,1 @@
+ALTER TABLE "question-generator_user" ADD COLUMN "token" integer DEFAULT 30;
