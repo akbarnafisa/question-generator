@@ -39,7 +39,7 @@ export function Profile() {
         </Link>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href={"/history"} className="w-full">
+          <Link href={"/question-list"} className="w-full">
             <DropdownMenuItem className="cursor-pointer">
               Questions List
             </DropdownMenuItem>
