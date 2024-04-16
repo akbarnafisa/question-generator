@@ -7,6 +7,16 @@ await import("./src/env.js");
 /** @type {import("next").NextConfig} */
 const config = {
   reactStrictMode: false,
+  async redirects() {
+    return [
+      {
+        source: '/subscription',
+        destination: '/subscription/overview',
+        permanent: true,
+      },
+
+    ]
+  },
 };
 
 export default config;
